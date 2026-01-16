@@ -21,3 +21,52 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+# Dependencies
+node_modules/
+
+# Build output
+build/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Created by venv; see https://docs.python.org/3/library/venv.html
+*
+.venv
+__pycache__
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+.env
+.venv/
+env/
+ENV/
+
+# Environment variables
+*.env
+
+# Logs
+*.log
+
+# Cache
+*.pytest_cache/
+.cache/
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
