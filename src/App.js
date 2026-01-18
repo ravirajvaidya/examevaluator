@@ -7,7 +7,7 @@ import NewLayout from './components/NewLayout';
 function App() {
   return (
     <div className="App">
-      <Info></Info>
+      {/* <Info></Info> */}
       {/* <ExcelEvaluator></ExcelEvaluator> */}
       <NewLayout></NewLayout>
     </div>
