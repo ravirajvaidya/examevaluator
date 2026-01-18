@@ -169,7 +169,7 @@ export default function EvaluationPage() {
                         <h4 style={styles.instructionsTitle}>How to Submit</h4>
                         <div style={styles.instructionsList}>
                             <p>1. Download the provided Excel template.</p>
-                            <p>2. Fill in your details, questions, and answers.</p>
+                            <p>2. Fill in your details, questions, and answers. Every entry should have your roll number.</p>
                             <p>3. Upload the completed Excel file.</p>
                             <p>4. Submit to get your answers evaluated.</p>
                         </div>
