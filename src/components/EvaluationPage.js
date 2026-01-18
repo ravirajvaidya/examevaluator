@@ -155,13 +155,37 @@ export default function EvaluationPage() {
             </div>
 
             <div style={styles.mainContent}>
-                {/* Excel Upload */}
+
                 <div style={styles.uploadCard}>
+
+                    {/* Header */}
                     <div style={styles.cardHeader}>
                         <span style={styles.icon}>📊</span>
-                        <h3 style={styles.cardTitle}>Upload Excel File</h3>
+                        <h3 style={styles.cardTitle}>Excel Submission</h3>
                     </div>
 
+                    {/* Instructions */}
+                    <div style={styles.instructionsBox}>
+                        <h4 style={styles.instructionsTitle}>How to Submit</h4>
+                        <div style={styles.instructionsList}>
+                            <p>1. Download the provided Excel template.</p>
+                            <p>2. Fill in your details, questions, and answers.</p>
+                            <p>3. Upload the completed Excel file.</p>
+                            <p>4. Submit to get your answers evaluated.</p>
+                        </div>
+                        <br /><br />
+                        <a
+                            href="Answers.xlsx"
+                            download
+                            style={styles.downloadButton}
+                        >
+                            ⬇ Download Excel Template
+                        </a>
+                    </div>
+                    <br />
+                    <br />
+                    <br />
+                    {/* Upload Section */}
                     <div style={styles.uploadContainer}>
                         <input
                             id="file-upload"
@@ -170,6 +194,7 @@ export default function EvaluationPage() {
                             onChange={handleFileUpload}
                             style={styles.hiddenFileInput}
                         />
+
                         <label htmlFor="file-upload" style={styles.uploadButton}>
                             {file ? (
                                 <>
@@ -182,7 +207,10 @@ export default function EvaluationPage() {
                                     </div>
                                     <button
                                         style={styles.removeButton}
-                                        onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setFile(null);
+                                        }}
                                     >
                                         ✕
                                     </button>
@@ -192,7 +220,9 @@ export default function EvaluationPage() {
                                     <div style={styles.uploadIcon}>📁</div>
                                     <div style={styles.uploadText}>
                                         <div style={styles.uploadTitle}>Choose Excel File</div>
-                                        <div style={styles.uploadSubtitle}>or drag and drop (XLSX, XLS, CSV)</div>
+                                        <div style={styles.uploadSubtitle}>
+                                            or drag and drop (XLSX, XLS, CSV)
+                                        </div>
                                     </div>
                                     <div style={styles.uploadBrowse}>Browse Files</div>
                                 </>
@@ -427,7 +457,7 @@ const styles = {
     formGrid: { display: "grid", gap: "2rem", marginBottom: "2.5rem" },
     inputGroup: { display: "flex", flexDirection: "column" },
     textareaGroup: { display: "flex", flexDirection: "column" },
-    label: { fontSize: "1rem", fontWeight: "600", color: "#1e293b", marginBottom: "0.75rem" },
+    label: { textAlign: "left", fontSize: "1rem", fontWeight: "600", color: "#1e293b", marginBottom: "0.75rem" },
     required: { color: "#ef4444" },
     rollNoInput: {
         padding: "1rem 1.25rem",
