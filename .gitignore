@@ -41,7 +41,7 @@ Thumbs.db
 # =========================
 # Python (safe)
 # =========================
-__pycache__/
+__pycache__
 *.py[cod]
 *.pyo
 .venv/
