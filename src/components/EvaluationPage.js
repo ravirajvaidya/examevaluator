@@ -173,7 +173,6 @@ export default function EvaluationPage() {
                             <p>3. Upload the completed Excel file.</p>
                             <p>4. Submit to get your answers evaluated.</p>
                         </div>
-                        <br /><br />
                         <a
                             href="Answers.xlsx"
                             download
@@ -182,9 +181,6 @@ export default function EvaluationPage() {
                             ⬇ Download Excel Template
                         </a>
                     </div>
-                    <br />
-                    <br />
-                    <br />
                     {/* Upload Section */}
                     <div style={styles.uploadContainer}>
                         <input
@@ -244,42 +240,43 @@ export default function EvaluationPage() {
                             {error}
                         </div>
                     )}
+                    <div style={styles.formWrapper}>
+                        <div style={styles.formGrid}>
+                            <div style={styles.inputGroup}>
+                                <label style={styles.label}>Roll Number <span style={styles.required}>*</span></label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g., 12345"
+                                    value={rollNo}
+                                    onChange={(e) => setRollNo(e.target.value)}
+                                    style={styles.rollNoInput}
+                                    disabled={loading}
+                                />
+                            </div>
 
-                    <div style={styles.formGrid}>
-                        <div style={styles.inputGroup}>
-                            <label style={styles.label}>Roll Number <span style={styles.required}>*</span></label>
-                            <input
-                                type="text"
-                                placeholder="e.g., 12345"
-                                value={rollNo}
-                                onChange={(e) => setRollNo(e.target.value)}
-                                style={styles.rollNoInput}
-                                disabled={loading}
-                            />
-                        </div>
+                            {/* ✅ DYNAMIC SMALL QUESTION BOX */}
+                            <div style={styles.textareaGroup}>
+                                <label style={styles.label}>Question <span style={styles.required}>*</span></label>
+                                <textarea
+                                    placeholder="Enter the complete question here..."
+                                    value={question}
+                                    onChange={(e) => setQuestion(e.target.value)}
+                                    style={styles.questionTextarea}
+                                    disabled={loading}
+                                />
+                            </div>
 
-                        {/* ✅ DYNAMIC SMALL QUESTION BOX */}
-                        <div style={styles.textareaGroup}>
-                            <label style={styles.label}>Question <span style={styles.required}>*</span></label>
-                            <textarea
-                                placeholder="Enter the complete question here..."
-                                value={question}
-                                onChange={(e) => setQuestion(e.target.value)}
-                                style={styles.questionTextarea}
-                                disabled={loading}
-                            />
-                        </div>
-
-                        <div style={styles.textareaGroup}>
-                            <label style={styles.label}>Student Answer <span style={styles.required}>*</span></label>
-                            <textarea
-                                placeholder="Enter the student's complete answer here..."
-                                value={answer}
-                                onChange={(e) => setAnswer(e.target.value)}
-                                style={styles.fullTextarea}
-                                rows={6}
-                                disabled={loading}
-                            />
+                            <div style={styles.textareaGroup}>
+                                <label style={styles.label}>Student Answer <span style={styles.required}>*</span></label>
+                                <textarea
+                                    placeholder="Enter the student's complete answer here..."
+                                    value={answer}
+                                    onChange={(e) => setAnswer(e.target.value)}
+                                    style={styles.fullTextarea}
+                                    rows={6}
+                                    disabled={loading}
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -454,11 +451,41 @@ const styles = {
     cardHeader: { display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" },
     icon: { fontSize: "2rem" },
     cardTitle: { fontSize: "1.8rem", fontWeight: "700", color: "#1e293b", margin: 0 },
-    formGrid: { display: "grid", gap: "2rem", marginBottom: "2.5rem" },
-    inputGroup: { display: "flex", flexDirection: "column" },
-    textareaGroup: { display: "flex", flexDirection: "column" },
-    label: { textAlign: "left", fontSize: "1rem", fontWeight: "600", color: "#1e293b", marginBottom: "0.75rem" },
-    required: { color: "#ef4444" },
+
+    formWrapper: {
+        maxWidth: "1920px",
+        margin: "0 auto",
+        padding: "0 24px"
+    },
+
+    formGrid: {
+        display: "grid",
+        gap: "2rem",
+        marginBottom: "2.5rem"
+    },
+
+    inputGroup: {
+        display: "flex",
+        flexDirection: "column"
+    },
+
+    textareaGroup: {
+        display: "flex",
+        flexDirection: "column"
+    },
+
+    label: {
+        textAlign: "left",
+        fontSize: "1rem",
+        fontWeight: "600",
+        color: "#1e293b",
+        marginBottom: "0.75rem"
+    },
+
+    required: {
+        color: "#ef4444"
+    },
+
     rollNoInput: {
         padding: "1rem 1.25rem",
         border: "2px solid #e2e8f0",
@@ -468,7 +495,7 @@ const styles = {
         width: "300px",
         maxWidth: "100%"
     },
-    // ✅ DYNAMIC QUESTION BOX (100px start, grows to 300px max)
+
     questionTextarea: {
         width: "100%",
         height: "100px",
@@ -485,6 +512,7 @@ const styles = {
         transition: "all 0.3s ease",
         overflowY: "auto"
     },
+
     fullTextarea: {
         width: "100%",
         minHeight: "180px",
@@ -590,6 +618,37 @@ const styles = {
         fontWeight: "600",
         cursor: "pointer",
         boxShadow: "0 10px 30px rgba(16,185,129,0.4)"
+    },
+    instructionsBox: {
+        background: "#f8fafc",
+        border: "1px solid #e5e7eb",
+        borderRadius: "8px",
+        padding: "16px",
+        marginBottom: "20px"
+    },
+    instructionsTitle: {
+        margin: "0 0 10px",
+        fontSize: "16px",
+        fontWeight: "600",
+        color: "#111827"
+    },
+    instructionsList: {
+        margin: "0 0 14px",
+        paddingLeft: "18px",
+        fontSize: "14px",
+        color: "#374151",
+        lineHeight: "1.6",
+        textAlign: "center"
+    },
+    downloadButton: {
+        display: "inline-block",
+        padding: "8px 14px",
+        background: "#2563eb",
+        color: "#fff",
+        borderRadius: "6px",
+        textDecoration: "none",
+        fontSize: "14px",
+        fontWeight: "500"
     }
 };
 
