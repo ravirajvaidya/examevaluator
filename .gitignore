@@ -1,72 +1,52 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# production
-/build
-
-# misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-# Dependencies
+# =========================
+# Node / Frontend
+# =========================
 node_modules/
-
-# Build output
-build/
 dist/
+build/
+coverage/
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
 
-# Environment variables
+# Environment files
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
-# Created by venv; see https://docs.python.org/3/library/venv.html
-*
-.venv
-__pycache__
-# Byte-compiled / optimized / DLL files
+# OS files
+.DS_Store
+Thumbs.db
+
+# =========================
+# Yarn Plug'n'Play
+# =========================
+# KEEP these if using Yarn PnP
+!.pnp.js
+!.pnp.cjs
+!.yarn/cache
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+
+# Ignore Yarn temp files
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# =========================
+# Python (safe)
+# =========================
 __pycache__/
 *.py[cod]
 *.pyo
-
-# Virtual environments
-venv
-.env
 .venv/
+venv/
 env/
 ENV/
-
-# Environment variables
-*.env
-
-# Logs
-*.log
-
-# Cache
-*.pytest_cache/
 .cache/
-# macOS
-.DS_Store
-
-# Windows
-Thumbs.db
+.pytest_cache/
