@@ -12,6 +12,9 @@ python-dotenv==1.0.1
 # OpenAI client (works with Perplexity API too)
 openai==1.52.2
 
+# Supabase client
+supabase==2.4.4
+
 # CORS middleware (already bundled with FastAPI, but explicit is safer)
 starlette==0.41.2
 
