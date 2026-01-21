@@ -36,8 +36,6 @@ export default function LoginPage(props) {
             //   password: formData.password,
             // });
 
-            navigate('/dashboard')
-
         } catch (err) {
             setError("Invalid email or password");
         } finally {
