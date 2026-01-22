@@ -36,9 +36,9 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 #Perplexity API key
 #===============================
 
-##load_dotenv()
-env_path = "venv/.env"
-load_dotenv(dotenv_path=env_path)
+load_dotenv()
+# env_path = "venv/.env"
+# load_dotenv(dotenv_path=env_path)
 
 PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
 if not PERPLEXITY_API_KEY:
