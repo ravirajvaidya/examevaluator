@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import "../styles/auth.css";
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_PUBLISHABLE_KEY;
@@ -120,11 +121,12 @@ export default function SignUpPage() {
     };
 
     return (
-        <div style={{ maxWidth: "400px", margin: "auto", padding: "20px" }}>
+        <div className="auth-container">
             <h2>Sign Up</h2>
-            {error && <p style={{ color: "red" }}>{error}</p>}
 
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {error && <p className="auth-error">{error}</p>}
+
+            <form onSubmit={handleSubmit} className="auth-form" >
                 <input type="text" name="name" placeholder="Full Name" value={formData.full_name} onChange={handleChange} required />
                 <input type="text" name="phone" placeholder="Phone No" value={formData.phone} onChange={handleChange} required />
                 <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
@@ -139,11 +141,17 @@ export default function SignUpPage() {
 
                 <input type="text" name="studentid" placeholder="Student ID" value={formData.studentid} onChange={handleChange} />
 
-                <button type="submit" disabled={loading}>
+                <button className="auth-btn" type="submit" disabled={loading}>
                     {loading ? "Processing..." : "Create Account"}
                 </button>
             </form>
-            <button onClick={() => navigate("/")} style={{ marginTop: "10px" }}>Back</button>
+
+            <button
+                className="auth-btn auth-btn-secondary"
+                onClick={() => navigate("/")}
+            >
+                Back
+            </button>
         </div>
     );
 }

@@ -3,6 +3,7 @@ import React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
+import "../styles/auth.css";
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_PUBLISHABLE_KEY;
@@ -58,12 +59,12 @@ export default function LoginPage(props) {
     };
 
     return (
-        <div style={{ maxWidth: "400px", margin: "auto" }}>
+        <div className="auth-container">
             <h2>Login</h2>
 
-            {error && <p style={{ color: "red" }}>{error}</p>}
+            {error && <p className="auth-error">{error}</p>}
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="auth-form">
                 <input
                     type="email"
                     name="email"
@@ -82,11 +83,17 @@ export default function LoginPage(props) {
                     required
                 />
 
-                <button type="submit" disabled={loading}>
+                <button className="auth-btn" type="submit" disabled={loading}>
                     {loading ? "Logging in..." : "Login"}
                 </button>
             </form>
-            <button type="button" onClick={() => navigate("/signup")}>Sign Up</button>
+
+            <button
+                className="auth-btn auth-btn-secondary"
+                onClick={() => navigate("/signup")}
+            >
+                Sign Up
+            </button>
         </div>
     );
 }
