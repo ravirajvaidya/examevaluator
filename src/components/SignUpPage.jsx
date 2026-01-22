@@ -58,7 +58,6 @@ export default function SignUpPage() {
                     options: {
                         data: {
                             // Use multiple keys to ensure the dashboard picks one up
-                            display_name: formData.name,
                             full_name: formData.name,   // Often required for the 'Display name' column
                             phone: formData.phone,       // User metadata phone
                             name: formData.name,
@@ -126,7 +125,7 @@ export default function SignUpPage() {
             {error && <p style={{ color: "red" }}>{error}</p>}
 
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
+                <input type="text" name="name" placeholder="Full Name" value={formData.full_name} onChange={handleChange} required />
                 <input type="text" name="phone" placeholder="Phone No" value={formData.phone} onChange={handleChange} required />
                 <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
                 <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
