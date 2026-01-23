@@ -1,0 +1,67 @@
+.profileBar {
+    display: "flex";
+    justifyContent: "flex-end";
+    position: "relative";
+    marginBottom: "1rem";
+}
+
+.profileButton {
+    display: "flex";
+    alignItems: "center";
+    gap: "0.6rem";
+    background: "white";
+    border: "1px solid #e5e7eb";
+    borderRadius: "999px";
+    padding: "0.4rem 0.8rem";
+    cursor: "pointer";
+    fontWeight: "600";
+}
+
+
+.profileImage {
+    width: "32px";
+    height: "32px";
+    borderRadius: "50%";
+    objectFit: "cover";
+}
+
+
+.profileName {
+    fontSize: "0.95rem";
+    color: "#1f2937"
+}
+
+
+.caret {
+    fontSize: "0.8rem";
+    color: "#6b7280";
+}
+
+
+.profileDropdown {
+    position: "absolute";
+    top: "48px";
+    right: "0";
+    background: "white";
+    borderRadius: "12px";
+    boxShadow: "0 10px 25px rgba(0,0,0,0.15)";
+    width: "180px";
+    overflow: "hidden";
+    zIndex: 1000;
+}
+
+
+.dropdownItem {
+    padding: "10px 14px";
+    fontSize: "0.9rem";
+    cursor: "pointer";
+    color: "#111827"
+}
+
+
+.dropdownDivider {
+    height: "1px";
+    background: "#e5e7eb";
+    margin: "4px 0;
+
+}

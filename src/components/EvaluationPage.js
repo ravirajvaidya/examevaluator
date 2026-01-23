@@ -4,8 +4,16 @@
 import React, { useState, useCallback } from "react";
 import * as XLSX from "xlsx";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { createClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_PUBLISHABLE_KEY;
 
 export default function EvaluationPage() {
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     const [file, setFile] = useState(null);
     const [rollNo, setRollNo] = useState("");
     const [question, setQuestion] = useState("");
@@ -14,8 +22,16 @@ export default function EvaluationPage() {
     const [showPreview, setShowPreview] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
 
     const API_ENDPOINT = "http://localhost:8000/api/evaluate-excel";
+
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        navigate("/");
+    };
 
     const handleFileUpload = (e) => {
         setFile(e.target.files[0]);
@@ -149,6 +165,55 @@ export default function EvaluationPage() {
 
     return (
         <div style={styles.container}>
+            {/* Profile Header Bar */}
+            <div style={styles.profileBar}>
+                <button
+                    style={styles.profileButton}
+                    onClick={() => setShowProfileMenu(prev => !prev)}
+                >
+                    <img
+                        src="logo192.png"
+                        alt="profile"
+                        style={styles.profileImage}
+                    />
+                    <span style={styles.profileName}>Profile Name</span>
+                    <span style={styles.caret}>▾</span>
+                </button>
+
+                {showProfileMenu && (
+                    <div style={styles.profileDropdown}>
+                        <button
+                            style={styles.dropdownButton}
+                            onClick={() => navigate("/profile")}
+                        >
+                            👤 My Profile
+                        </button>
+
+                        <button
+                            style={styles.dropdownButton}
+                            onClick={() => navigate("/scores")}
+                        >
+                            📊 My Scores
+                        </button>
+
+                        <button
+                            style={styles.dropdownButton}
+                            onClick={() => navigate("/settings")}
+                        >
+                            ⚙️ Settings
+                        </button>
+
+                        <div style={styles.dropdownDivider}></div>
+
+                        <button
+                            style={{ ...styles.dropdownButton, color: "#dc2626" }}
+                            onClick={handleLogout}
+                        >
+                            🚪 Logout
+                        </button>
+                    </div>
+                )}
+            </div>
             <div style={styles.header}>
                 <h1 style={styles.title}>🤖 AI Answer Evaluator</h1>
                 <p style={styles.subtitle}>Professional grading powered by AI</p>
@@ -649,7 +714,81 @@ const styles = {
         textDecoration: "none",
         fontSize: "14px",
         fontWeight: "500"
-    }
+    },
+    profileBar: {
+        display: "flex",
+        justifyContent: "flex-end",
+        position: "relative",
+        marginBottom: "1rem"
+    },
+
+    profileButton: {
+        display: "flex",
+        alignItems: "center",
+        gap: "0.6rem",
+        background: "white",
+        border: "1px solid #e5e7eb",
+        borderRadius: "999px",
+        padding: "0.4rem 0.8rem",
+        cursor: "pointer",
+        fontWeight: "600"
+    },
+
+    profileImage: {
+        width: "32px",
+        height: "32px",
+        borderRadius: "50%",
+        objectFit: "cover"
+    },
+
+    profileName: {
+        fontSize: "0.95rem",
+        color: "#1f2937"
+    },
+
+    caret: {
+        fontSize: "0.8rem",
+        color: "#6b7280"
+    },
+
+    profileDropdown: {
+        position: "absolute",
+        top: "48px",
+        right: "0",
+        background: "white",
+        borderRadius: "12px",
+        boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+        width: "180px",
+        overflow: "hidden",
+        zIndex: 1000
+    },
+
+    dropdownItem: {
+        padding: "10px 14px",
+        fontSize: "0.9rem",
+        cursor: "pointer",
+        color: "#111827"
+    },
+
+    dropdownDivider: {
+        height: "1px",
+        background: "#e5e7eb",
+        margin: "4px 0"
+    },
+    dropdownButton: {
+        width: "100%",
+        textAlign: "left",
+        padding: "10px 14px",
+        fontSize: "0.9rem",
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        color: "#111827",
+        fontFamily: "inherit"
+    },
+    dropdownButtonHover: {
+        background: "#f3f4f6"
+    },
 };
 
 function getGradeColor(grade) {
