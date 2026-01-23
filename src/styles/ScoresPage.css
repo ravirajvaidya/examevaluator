@@ -1,0 +1,56 @@
+.scores-container {
+  padding: 24px;
+  background: #f4f6f8;
+  min-height: 100vh;
+}
+
+.scores-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.download-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.download-btn:hover {
+  background: #b91c1c;
+}
+
+.score-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.score-card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.score {
+  font-weight: bold;
+  color: #2563eb;
+}
+
+.score-footer {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #6b7280;
+}
