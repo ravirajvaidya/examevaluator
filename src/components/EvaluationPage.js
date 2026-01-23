@@ -13,7 +13,8 @@ const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_PUBLISHABLE_KEY;
 export default function EvaluationPage() {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+    const userData = JSON.parse(localStorage.getItem("user"));
+    console.log("userData = " + JSON.stringify(userData));
     const [file, setFile] = useState(null);
     const [rollNo, setRollNo] = useState("");
     const [question, setQuestion] = useState("");
@@ -176,7 +177,7 @@ export default function EvaluationPage() {
                         alt="profile"
                         style={styles.profileImage}
                     />
-                    <span style={styles.profileName}>Profile Name</span>
+                    <span style={styles.profileName}>{userData.user.email}</span>
                     <span style={styles.caret}>▾</span>
                 </button>
 
@@ -221,15 +222,13 @@ export default function EvaluationPage() {
 
             <div style={styles.mainContent}>
 
-                <div style={styles.uploadCard}>
+                {/* <div style={styles.uploadCard}>
 
-                    {/* Header */}
                     <div style={styles.cardHeader}>
                         <span style={styles.icon}>📊</span>
                         <h3 style={styles.cardTitle}>Excel Submission</h3>
                     </div>
 
-                    {/* Instructions */}
                     <div style={styles.instructionsBox}>
                         <h4 style={styles.instructionsTitle}>How to Submit</h4>
                         <div style={styles.instructionsList}>
@@ -246,7 +245,6 @@ export default function EvaluationPage() {
                             ⬇ Download Excel Template
                         </a>
                     </div>
-                    {/* Upload Section */}
                     <div style={styles.uploadContainer}>
                         <input
                             id="file-upload"
@@ -290,7 +288,7 @@ export default function EvaluationPage() {
                             )}
                         </label>
                     </div>
-                </div>
+                </div> */}
 
                 {/* Manual Entry */}
                 <div style={styles.card}>
