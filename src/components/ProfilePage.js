@@ -1,10 +1,12 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/ProfilePage.css";
 
-export default function ProfilePage(props) {
+export default function ProfilePage({ user }) {
+  const navigate = useNavigate();
 
-  // fallback data if props not passed
-  const profile = props.user || {
+  // Fallback profile data (if props not passed)
+  const profile = user || {
     name: "Saurabh Kumar",
     email: "saurabh@example.com",
     role: "Student",
@@ -16,6 +18,8 @@ export default function ProfilePage(props) {
   return (
     <div className="profile-container">
       <div className="profile-card">
+        
+        {/* Header */}
         <div className="profile-header">
           <div className="avatar">
             {profile.name.charAt(0)}
@@ -24,6 +28,7 @@ export default function ProfilePage(props) {
           <p className="role">{profile.role}</p>
         </div>
 
+        {/* Details */}
         <div className="profile-details">
           <div className="detail-row">
             <span>Email</span>
@@ -46,9 +51,16 @@ export default function ProfilePage(props) {
           </div>
         </div>
 
+        {/* Actions */}
         <div className="profile-actions">
-          <button className="logout-btn">Logout</button>
+          <button
+            className="logout-btn"
+            onClick={() => navigate("/dashboard")}
+          >
+            ⬅ Back to Dashboard
+          </button>
         </div>
+
       </div>
     </div>
   );

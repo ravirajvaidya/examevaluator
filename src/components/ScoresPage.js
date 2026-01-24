@@ -1,8 +1,10 @@
 import React from "react";
 import { jsPDF } from "jspdf";
+import { useNavigate } from "react-router-dom";
 import "../styles/ScoresPage.css";
 
 export default function ScoresPage({ evaluations }) {
+  const navigate = useNavigate();
 
   // Temporary fallback data while editing UI
   const data = evaluations || [
@@ -40,7 +42,6 @@ export default function ScoresPage({ evaluations }) {
     doc.setFontSize(11);
 
     data.forEach((item) => {
-
       const addBlock = (label, text) => {
         const lines = doc.splitTextToSize(`${label}: ${text}`, 180);
         if (y + lines.length * 7 > 280) {
@@ -51,6 +52,7 @@ export default function ScoresPage({ evaluations }) {
         y += lines.length * 7 + 4;
       };
 
+      addBlock("Subject", item.subject);
       addBlock("Question", item.question);
       addBlock("Answer", item.answer);
       addBlock("Feedback", item.feedback);
@@ -67,9 +69,18 @@ export default function ScoresPage({ evaluations }) {
   return (
     <div className="scores-container">
       <div className="scores-header">
+        {/* ⬅ Back Button */}
+        <button
+          className="back-btn back-btn-primary"
+          onClick={() => navigate("/dashboard")}
+        >
+          ⬅ Back to Dashboard
+        </button>
+
         <h2 className="page-title">Scores</h2>
+
         <button className="download-btn" onClick={downloadPDF}>
-          Download PDF
+          📄 Download PDF
         </button>
       </div>
 
@@ -87,7 +98,7 @@ export default function ScoresPage({ evaluations }) {
           <p><strong>Feedback:</strong> {item.feedback}</p>
 
           <div className="score-footer">
-            <span>{item.evaluatedOn}</span>
+            <span>Evaluated on: {item.evaluatedOn}</span>
           </div>
         </div>
       ))}
