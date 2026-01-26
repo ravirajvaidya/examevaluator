@@ -36,7 +36,7 @@ export default function LoginPage(props) {
         setLoading(true);
 
         try {
-            console.log("Login Data:", JSON.stringify(formData));
+            // console.log("Login Data:", JSON.stringify(formData));
 
             // TODO: Supabase / API login
             const { data, error } = await supabase.auth.signInWithPassword({
@@ -45,9 +45,9 @@ export default function LoginPage(props) {
             });
 
             if (!error) {
-                console.log("Login success:", JSON.stringify(data));
+                // console.log("Login success:", JSON.stringify(data));
                 localStorage.setItem("user", JSON.stringify(data));
-                alert("Login successful!");
+                //alert("Login successful!");
                 navigate("/dashboard"); // change to /dashboard if needed
                 setLoading(false);
             }
