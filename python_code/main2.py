@@ -171,7 +171,7 @@ def process_pending_evaluations():
             )
 
             # Update result
-            supabase.table(TABLE_NAME) \
+            res = ( supabase.table(TABLE_NAME) \
                 .update({
                     "score": result["score"],
                     "feedback": result["feedback"],
@@ -180,6 +180,8 @@ def process_pending_evaluations():
                 }) \
                 .eq("eval_id", eval_id) \
                 .execute()
+                )
+            print("Update result:", res.data, res.error)
             print(
     f"✅ Evaluated | eval_id={eval_id} | "
     f"score={result['score']}/10"
