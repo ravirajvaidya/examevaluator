@@ -150,7 +150,7 @@ def process_pending_evaluations():
         supabase
         .table(TABLE_NAME)
         .select("*")
-        .in_("evaluation_status", ["pending", "failed", "PENDING", "FAILED","Pending", "Failed"])
+        .in_("evaluation_status", ["failed", "PENDING",])
         .order("created_at")
         .limit(5)
         .execute()
@@ -174,7 +174,23 @@ def process_pending_evaluations():
                 row["question"],
                 row["answer"]
             )
-            print("🧠 AI result:", result)
+
+            # Update result
+            res = ( supabase.table(TABLE_NAME) \
+                .update({
+                    "score": result["score"],
+                    "feedback": result["feedback"],
+                    "evaluation_status": "evaluated",
+                    "evaluated_at": datetime.now(timezone.utc).isoformat()
+                }) \
+                .eq("eval_id", eval_id) \
+                .execute()
+                )
+            print("Update result:", res.data, res.error)
+            print(
+    f"✅ Evaluated | eval_id={eval_id} | "
+    f"score={result['score']}/10"
+)
 
         except Exception:
             # ❌ Only evaluation failure marks failed
