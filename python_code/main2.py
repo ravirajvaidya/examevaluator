@@ -11,10 +11,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client
 from openai import OpenAI
 
+from pathlib import Path
+from dotenv import load_dotenv
+import os
+
 # =========================================================
 # ENV
 # =========================================================
-load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR / ".env", override=True)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -153,49 +159,47 @@ def process_pending_evaluations():
     rows = response.data or []
     print(f"📦 Rows fetched: {len(rows)}")
 
-
     for row in rows:
         eval_id = row["eval_id"]
 
-        try:
-            # Lock row
-            supabase.table(TABLE_NAME) \
-                .update({"evaluation_status": "processing"}) \
-                .eq("eval_id", eval_id) \
-                .execute()
+        # 1️⃣ Lock row
+        supabase.table(TABLE_NAME) \
+            .update({"evaluation_status": "processing"}) \
+            .eq("eval_id", eval_id) \
+            .execute()
 
-            # Evaluate
+        try:
+            # 2️⃣ Evaluate (ONLY this can fail)
             result = grade_answer(
                 row["question"],
                 row["answer"]
             )
-
-            # Update result
-            res = ( supabase.table(TABLE_NAME) \
-                .update({
-                    "score": result["score"],
-                    "feedback": result["feedback"],
-                    "evaluation_status": "evaluated",
-                    "evaluated_at": datetime.now(timezone.utc).isoformat()
-                }) \
-                .eq("eval_id", eval_id) \
-                .execute()
-                )
-            print("Update result:", res.data, res.error)
-            print(
-    f"✅ Evaluated | eval_id={eval_id} | "
-    f"score={result['score']}/10"
-)
+            print("🧠 AI result:", result)
 
         except Exception:
+            # ❌ Only evaluation failure marks failed
             supabase.table(TABLE_NAME) \
-                .update({
-                    "evaluation_status": "failed"
-                }) \
+                .update({"evaluation_status": "failed"}) \
                 .eq("eval_id", eval_id) \
                 .execute()
-
             traceback.print_exc()
+            continue   # 🔑 VERY IMPORTANT
+
+        # 3️⃣ Update DB (this should NEVER mark failed)
+        res = (
+            supabase.table(TABLE_NAME)
+            .update({
+                "score": result["score"],
+                "feedback": result["feedback"],
+                "evaluation_status": "evaluated",
+                "evaluated_at": datetime.now(timezone.utc).isoformat()
+            })
+            .eq("eval_id", eval_id)
+            .execute()
+        )
+
+        print("✅ Evaluated | eval_id =", eval_id)
+
 
 # =========================================================
 # BACKGROUND WORKER LOOP
