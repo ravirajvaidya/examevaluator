@@ -108,9 +108,6 @@ STUDENT ANSWER:
 
     raw = response.choices[0].message.content.strip()
 
-    # -------------------------------
-    # Extract JSON safely
-    # -------------------------------
     match = re.search(r"\{[\s\S]*?\}", raw)
     if not match:
         raise ValueError("AI response does not contain JSON")
@@ -120,9 +117,6 @@ STUDENT ANSWER:
     except json.JSONDecodeError:
         raise ValueError("Invalid JSON returned by AI")
 
-    # -------------------------------
-    # Normalize & validate
-    # -------------------------------
     total_score = data.get("total_score", 0)
     feedback = data.get("feedback", "")
 
@@ -150,22 +144,24 @@ def process_pending_evaluations():
         supabase
         .table(TABLE_NAME)
         .select("*")
-        .in_("evaluation_status", ["PENDING", "FAILED"])
+        .in_("evaluation_status", ["pending", "failed", "PENDING", "FAILED","Pending", "Failed"])
         .order("created_at")
         .limit(5)
         .execute()
     )
 
     rows = response.data or []
+    print(f"📦 Rows fetched: {len(rows)}")
+
 
     for row in rows:
-        eval_id = row["manual_evaluation_id"]
+        eval_id = row["eval_id"]
 
         try:
             # Lock row
             supabase.table(TABLE_NAME) \
-                .update({"evaluation_status": "PROCESSING"}) \
-                .eq("manual_evaluation_id", eval_id) \
+                .update({"evaluation_status": "processing"}) \
+                .eq("eval_id", eval_id) \
                 .execute()
 
             # Evaluate
@@ -179,18 +175,22 @@ def process_pending_evaluations():
                 .update({
                     "score": result["score"],
                     "feedback": result["feedback"],
-                    "evaluation_status": "COMPLETED",
+                    "evaluation_status": "evaluated",
                     "evaluated_at": datetime.now(timezone.utc).isoformat()
                 }) \
-                .eq("manual_evaluation_id", eval_id) \
+                .eq("eval_id", eval_id) \
                 .execute()
+            print(
+    f"✅ Evaluated | eval_id={eval_id} | "
+    f"score={result['score']}/10"
+)
 
         except Exception:
             supabase.table(TABLE_NAME) \
                 .update({
-                    "evaluation_status": "FAILED"
+                    "evaluation_status": "failed"
                 }) \
-                .eq("manual_evaluation_id", eval_id) \
+                .eq("eval_id", eval_id) \
                 .execute()
 
             traceback.print_exc()
@@ -198,7 +198,7 @@ def process_pending_evaluations():
 # =========================================================
 # BACKGROUND WORKER LOOP
 # =========================================================
-@app.on_event("startup")
+'''@app.on_event("startup")
 def start_worker():
     import threading
 
@@ -207,4 +207,19 @@ def start_worker():
             process_pending_evaluations()
             time.sleep(60)
 
+    threading.Thread(target=worker, daemon=True).start()'''
+@app.on_event("startup")
+def start_worker():
+    import threading
+
+    print("🚀 FastAPI startup event triggered")
+    print("🧠 Background evaluator worker starting...")
+
+    def worker():
+        while True:
+            print("🔍 Checking for pending evaluations...")
+            process_pending_evaluations()
+            time.sleep(60)
+
     threading.Thread(target=worker, daemon=True).start()
+
