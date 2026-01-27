@@ -50,7 +50,7 @@ export default function EvaluationPage() {
 
   /* ---------------- VALIDATION ---------------- */
   const validateInput = useCallback(() => {
-    if (!rollNo.trim()) return "Please enter a roll number";
+    // if (!rollNo.trim()) return "Please enter a roll number";
     if (qaList.some(q => !q.question.trim()))
       return "Please enter all questions";
     if (qaList.some(q => !q.answer.trim()) && !file)
@@ -59,88 +59,76 @@ export default function EvaluationPage() {
   }, [rollNo, qaList, file]);
 
   /* ---------------- EVALUATE ---------------- */
+
   const handleEvaluate = async () => {
+    console.log("handleEvaluate CALLED 111");
     const validationError = validateInput();
     if (validationError) {
       setError(validationError);
       return;
     }
 
-    setError("");
     setLoading(true);
+    setError("");
     setShowPreview(false);
 
-    const formData = new FormData();
-
     try {
-      if (file) {
-        formData.append("file", file);
-      } else {
-        // ✅ Create Excel with multiple Q/A pairs for same roll number
-        const excelData = qaList.map(q => ({
-          roll_number: rollNo.trim(),
-          question: q.question.trim(),
-          answer: q.answer.trim()
-        }));
+      // 1️⃣ Wait for session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-        const ws = XLSX.utils.json_to_sheet(excelData, {
-          header: ["roll_number", "question", "answer"]
-        });
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Answers");
-        const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-        const blob = new Blob([buffer], {
-          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        });
-        formData.append("file", blob, "answers.xlsx");
+      if (!session) {
+        throw new Error("No session yet");
       }
 
-      const response = await axios.post(API_ENDPOINT, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        timeout: 60000 // Increased timeout for multiple questions
-      });
+      // 2️⃣ Fetch user profile
+      const { data, error } = await supabase
+        .from("userdetails")
+        .select("*")
+        .eq("auth_user_id", session.user.id)
+        .single();
 
-      let evalResults = [];
-      if (response.data.results && Array.isArray(response.data.results)) {
-        evalResults = response.data.results;
-      } else if (Array.isArray(response.data)) {
-        evalResults = response.data;
-      } else {
-        evalResults = [response.data];
+      if (error || !data) {
+        throw new Error("User not authenticated");
       }
 
-      // Transform results with original data preservation
-      const transformedResults = evalResults.map((item, index) => {
-        const originalQA = qaList[index % qaList.length]; // Match with original Q/A
-        return {
-          rollNo: item.roll_number || rollNo.trim() || "Unknown",
-          question: originalQA?.question || item.question || "",
-          answer: originalQA?.answer || item.answer || "",
-          total_score: parseFloat(item.total_score) || 0,
-          content_score: parseFloat(item.content_score) || 0,
-          organization_score: parseFloat(item.organization_score) || 0,
-          language_score: parseFloat(item.language_score) || 0,
-          grade: item.grade || "F",
-          feedback: item.feedback || "No feedback available"
-        };
-      });
+      console.log("Session Data Called : " + JSON.stringify(data));
 
-      setResults(transformedResults);
-      setShowPreview(true);
+      // 1️⃣ Prepare payload
+      const payload = qaList.map((q) => ({
+        auth_user_id: session.user.id,   // ✅ required
+        student_id: data.studentid || null, // ✅ nullable
+        question: q.question.trim(),     // ✅ required
+        answer: q.answer.trim(),         // ✅ required
+        evaluation_status: "PENDING"
+      }));
+
+      console.log(JSON.stringify(payload));
+
+      // 2️⃣ Insert into Supabase
+      const { error: insertError } = await supabase
+        .from("manual_evaluations")
+        .insert(payload);
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      // ✅ SUCCESS FEEDBACK
+      alert("✅ Data submitted successfully");
+
+      // 🔄 RESET FORM
+      clearForm();
 
     } catch (err) {
-      console.error("Error:", err.response?.data || err.message);
-      if (err.code === 'ECONNABORTED') {
-        setError("⏰ Request timed out. Multiple questions take longer to process.");
-      } else if (err.response?.status === 404) {
-        setError("🚫 Backend not found. Is server running on http://localhost:8000?");
-      } else {
-        setError(`❌ ${err.response?.data?.error || err.message || "Evaluation failed"}`);
-      }
+      console.error(err);
+      setError(err.message || "Failed to save answers");
     } finally {
       setLoading(false);
     }
   };
+
 
   /* ---------------- DOWNLOAD ---------------- */
   const handleDownload = useCallback(() => {
@@ -229,7 +217,7 @@ export default function EvaluationPage() {
 
           <div style={styles.formGrid}>
             {/* Roll Number */}
-            <div style={styles.inputGroup}>
+            {/* <div style={styles.inputGroup}>
               <label style={styles.label}>Roll Number <span style={styles.required}>*</span></label>
               <input
                 type="text"
@@ -239,7 +227,7 @@ export default function EvaluationPage() {
                 style={styles.rollNoInput}
                 disabled={loading}
               />
-            </div>
+            </div> */}
 
             {/* 🔹 MULTI-QUESTION BLOCKS - SAME ORIGINAL STYLES */}
             {qaList.map((qa, index) => (
@@ -304,8 +292,11 @@ export default function EvaluationPage() {
 
           <div style={styles.buttonGroup}>
             <button
-              onClick={handleEvaluate}
-              disabled={loading || (!rollNo && !file)}
+              onClick={() => {
+                console.log("BUTTON CLICKED");
+                handleEvaluate();
+              }}
+              disabled={loading}
               style={{
                 ...styles.primaryButton,
                 ...(loading ? styles.loadingButton : {})
@@ -393,7 +384,7 @@ export default function EvaluationPage() {
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 }
 
