@@ -150,7 +150,7 @@ def process_pending_evaluations():
         supabase
         .table(TABLE_NAME)
         .select("*")
-        .in_("evaluation_status", ["failed", "PENDING",])
+        .in_("evaluation_status", ["FAILED", "PENDING",])
         .order("created_at")
         .limit(5)
         .execute()
@@ -164,7 +164,7 @@ def process_pending_evaluations():
 
         # 1️⃣ Lock row
         supabase.table(TABLE_NAME) \
-            .update({"evaluation_status": "processing"}) \
+            .update({"evaluation_status": "PROCESSING"}) \
             .eq("eval_id", eval_id) \
             .execute()
 
@@ -174,28 +174,12 @@ def process_pending_evaluations():
                 row["question"],
                 row["answer"]
             )
-
-            # Update result
-            res = ( supabase.table(TABLE_NAME) \
-                .update({
-                    "score": result["score"],
-                    "feedback": result["feedback"],
-                    "evaluation_status": "evaluated",
-                    "evaluated_at": datetime.now(timezone.utc).isoformat()
-                }) \
-                .eq("eval_id", eval_id) \
-                .execute()
-                )
-            print("Update result:", res.data, res.error)
-            print(
-    f"✅ Evaluated | eval_id={eval_id} | "
-    f"score={result['score']}/10"
-)
+            print("🧠 AI result:", result)
 
         except Exception:
             # ❌ Only evaluation failure marks failed
             supabase.table(TABLE_NAME) \
-                .update({"evaluation_status": "failed"}) \
+                .update({"evaluation_status": "FAILED"}) \
                 .eq("eval_id", eval_id) \
                 .execute()
             traceback.print_exc()
@@ -207,7 +191,7 @@ def process_pending_evaluations():
             .update({
                 "score": result["score"],
                 "feedback": result["feedback"],
-                "evaluation_status": "evaluated",
+                "evaluation_status": "EVALUATED",
                 "evaluated_at": datetime.now(timezone.utc).isoformat()
             })
             .eq("eval_id", eval_id)
@@ -215,7 +199,6 @@ def process_pending_evaluations():
         )
 
         print("✅ Evaluated | eval_id =", eval_id)
-
 
 # =========================================================
 # BACKGROUND WORKER LOOP
