@@ -181,7 +181,7 @@ def process_pending_evaluations():
                 .eq("eval_id", eval_id) \
                 .execute()
                 )
-            print("Update result:", res.data, res.error)
+           
             print(
     f"✅ Evaluated | eval_id={eval_id} | "
     f"score={result['score']}/10"
