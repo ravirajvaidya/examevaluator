@@ -14,9 +14,7 @@ from openai import OpenAI
 # =========================================================
 # ENV
 # =========================================================
-env_path = "D:\\000_SEED\\ExamEvaluatorGITReactApp\\examevaluator\\python_code\\venv\\.env"
-
-load_dotenv(dotenv_path=env_path)
+load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
