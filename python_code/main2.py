@@ -1,6 +1,10 @@
 import os
 import json
 import re
+import time
+import traceback
+from datetime import datetime, timezone
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,9 +14,9 @@ from openai import OpenAI
 # =========================================================
 # ENV
 # =========================================================
-env_path = "venv/.env"
-load_dotenv(dotenv_path=env_path)
+env_path = "D:\\000_SEED\\ExamEvaluatorGITReactApp\\examevaluator\\python_code\\venv\\.env"
 
+load_dotenv(dotenv_path=env_path)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -21,6 +25,9 @@ PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
 if not all([SUPABASE_URL, SUPABASE_KEY, PERPLEXITY_API_KEY]):
     raise ValueError("Missing environment variables")
 
+# =========================================================
+# CLIENTS
+# =========================================================
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 client = OpenAI(
@@ -28,29 +35,16 @@ client = OpenAI(
     base_url="https://api.perplexity.ai"
 )
 
+TABLE_NAME = "manual_evaluations"
+
 # =========================================================
 # FASTAPI
 # =========================================================
 app = FastAPI(title="Supabase AI Answer Evaluator")
 
-##to be used at the time of production
-'''app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://yourfrontend.com",
-        "https://admin.yourfrontend.com"
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Authorization", "Content-Type"],
-)
-'''
-
-## to be used while local testing
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],   # restrict in production
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -59,33 +53,40 @@ app.add_middleware(
 # RUBRIC
 # =========================================================
 GRADING_RUBRIC = """
-You are an experienced examiner. You are fair strict and unbiased evaluator.
-Don't focus on irrelevent things that students are typing like:
-1. Its a life and death situation to me or self harm comments.
-2. Dont focus on executable scripts posted at all. If such activity is found include it in the feedback.
-3. Be bjective and strict like a human evaluator. Don't award a lot of marks for average questions.
+You are an experienced examiner. You are a fair, strict, and unbiased evaluator.
 
-Grade the student's answer from 100 based on:
+Ignore:
+- Emotional statements or self-harm related remarks
+- Executable scripts (mention them only in feedback if present)
+
+Be objective and strict like a human evaluator.
+Do not award high marks for average answers.
+
+Grade out of 10 using:
 1. Accuracy & relevance (0–4)
 2. Organization & clarity (0–3)
 3. Language & grammar (0–3)
 
 Return ONLY valid JSON:
 {
-  "total_score": 10.0,
-  "content_score": 5,
-  "organization_score": 2.5,
-  "language_score": 2.5,
-  "grade": "A","B",
+  "total_score": 10,
+  "content_score": 4,
+  "organization_score": 3,
+  "language_score": 3,
+  "grade": "A",
   "feedback": "Concise feedback"
 }
 """
+
 # =========================================================
-# AI GRADER
+# AI GRADER (SAFE + CLEAN)
 # =========================================================
 def grade_answer(question: str, answer: str) -> dict:
     if not answer.strip():
-        return {"total_score": 0, "feedback": "No answer submitted"}
+        return {
+            "score": 0,
+            "feedback": "No answer submitted."
+        }
 
     prompt = f"""
 {GRADING_RUBRIC}
@@ -99,85 +100,113 @@ STUDENT ANSWER:
 
     response = client.chat.completions.create(
         model="sonar-pro",
-        temperature=0.1,
-        max_tokens=200,
+        temperature=0,
+        max_tokens=300,
         messages=[
-            {"role": "system", "content": "Return JSON only"},
+            {"role": "system", "content": "Return valid JSON only"},
             {"role": "user", "content": prompt}
         ]
     )
 
-    raw = response.choices[0].message.content
-    match = re.search(r"\{.*\}", raw, re.DOTALL)
-    return json.loads(match.group(0))
+    raw = response.choices[0].message.content.strip()
 
-# =========================================================
-# CORE ENDPOINT
-# =========================================================
-@app.post("/evaluate/pending")
-def evaluate_pending_answers():
-    """
-    Evaluates all PENDING records in evaluations table
-    """
+    # -------------------------------
+    # Extract JSON safely
+    # -------------------------------
+    match = re.search(r"\{[\s\S]*?\}", raw)
+    if not match:
+        raise ValueError("AI response does not contain JSON")
 
-    # 1️⃣ Fetch pending evaluations + answer + question
-    rows = (
-        supabase
-        .table("evaluations")
-        .select("""
-            id,
-            questionid,
-            studentid,
-            answers(answer),
-            questions(question, maxmarks)
-        """)
-        .eq("status", "pending")
-        .execute()
-        .data
-    )
+    try:
+        data = json.loads(match.group(0))
+    except json.JSONDecodeError:
+        raise ValueError("Invalid JSON returned by AI")
 
-    evaluated = 0
-    failed = 0
+    # -------------------------------
+    # Normalize & validate
+    # -------------------------------
+    total_score = data.get("total_score", 0)
+    feedback = data.get("feedback", "")
 
-    for row in rows:
-        try:
-            question_text = row["questions"]["question"]
-            max_marks = row["questions"]["maxmarks"]
-            answer_text = row["answers"]["answer"]
+    try:
+        total_score = float(total_score)
+    except Exception:
+        total_score = 0.0
 
-            result = grade_answer(question_text, answer_text)
+    total_score = max(0.0, min(total_score, 10.0))
 
-            # Scale marks to maxmarks
-            marks_awarded = round(
-                (result["total_score"] / 10) * max_marks,2
-            )
-
-            # 2️⃣ Update evaluation
-            supabase.table("evaluations").update({
-                "marksawarded": marks_awarded,
-                "feedback": result.get("feedback", ""),
-                "status": "evaluated"
-            }).eq("id", row["id"]).execute()
-
-            evaluated += 1
-
-        except Exception as e:
-            supabase.table("evaluations").update({
-                "status": "failed",
-                "feedback": f"Evaluation error: {str(e)[:100]}"
-            }).eq("id", row["id"]).execute()
-
-            failed += 1
+    feedback = str(feedback).strip()
+    if not feedback:
+        feedback = "Answer evaluated."
 
     return {
-        "status": "completed",
-        "evaluated": evaluated,
-        "failed": failed
+        "score": int(round(total_score)),
+        "feedback": feedback
     }
 
 # =========================================================
-# HEALTH
+# PROCESS PENDING / FAILED ROWS
 # =========================================================
-@app.get("/")
-def health():
-    return {"status": "Supabase AI Evaluator running"}
+def process_pending_evaluations():
+    response = (
+        supabase
+        .table(TABLE_NAME)
+        .select("*")
+        .in_("evaluation_status", ["PENDING", "FAILED"])
+        .order("created_at")
+        .limit(5)
+        .execute()
+    )
+
+    rows = response.data or []
+
+    for row in rows:
+        eval_id = row["manual_evaluation_id"]
+
+        try:
+            # Lock row
+            supabase.table(TABLE_NAME) \
+                .update({"evaluation_status": "PROCESSING"}) \
+                .eq("manual_evaluation_id", eval_id) \
+                .execute()
+
+            # Evaluate
+            result = grade_answer(
+                row["question"],
+                row["answer"]
+            )
+
+            # Update result
+            supabase.table(TABLE_NAME) \
+                .update({
+                    "score": result["score"],
+                    "feedback": result["feedback"],
+                    "evaluation_status": "COMPLETED",
+                    "evaluated_at": datetime.now(timezone.utc).isoformat()
+                }) \
+                .eq("manual_evaluation_id", eval_id) \
+                .execute()
+
+        except Exception:
+            supabase.table(TABLE_NAME) \
+                .update({
+                    "evaluation_status": "FAILED"
+                }) \
+                .eq("manual_evaluation_id", eval_id) \
+                .execute()
+
+            traceback.print_exc()
+
+# =========================================================
+# BACKGROUND WORKER LOOP
+# =========================================================
+@app.on_event("startup")
+def start_worker():
+    import threading
+
+    def worker():
+        while True:
+            process_pending_evaluations()
+            time.sleep(60)
+
+    threading.Thread(target=worker, daemon=True).start()

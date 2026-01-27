@@ -1,0 +1,70 @@
+# =========================================================
+# CORE ENDPOINT
+# =========================================================
+@app.post("/evaluate/pending")
+def evaluate_pending_answers():
+    """
+    Evaluates all PENDING records in evaluations table
+    """
+
+    # 1️⃣ Fetch pending evaluations + answer + question
+    rows = (
+        supabase
+        .table("evaluations")
+        .select("""
+            id,
+            questionid,
+            studentid,
+            answers(answer),
+            questions(question, maxmarks)
+        """)
+        .eq("status", "pending")
+        .execute()
+        .data
+    )
+
+    evaluated = 0
+    failed = 0
+
+    for row in rows:
+        try:
+            question_text = row["questions"]["question"]
+            max_marks = row["questions"]["maxmarks"]
+            answer_text = row["answers"]["answer"]
+
+            result = grade_answer(question_text, answer_text)
+
+            # Scale marks to maxmarks
+            marks_awarded = round(
+                (result["total_score"] / 10) * max_marks,2
+            )
+
+            # 2️⃣ Update evaluation
+            supabase.table("evaluations").update({
+                "marksawarded": marks_awarded,
+                "feedback": result.get("feedback", ""),
+                "status": "evaluated"
+            }).eq("id", row["id"]).execute()
+
+            evaluated += 1
+
+        except Exception as e:
+            supabase.table("evaluations").update({
+                "status": "failed",
+                "feedback": f"Evaluation error: {str(e)[:100]}"
+            }).eq("id", row["id"]).execute()
+
+            failed += 1
+
+    return {
+        "status": "completed",
+        "evaluated": evaluated,
+        "failed": failed
+    }
+
+# =========================================================
+# HEALTH
+# =========================================================
+@app.get("/")
+def health():
+    return {"status": "Supabase AI Evaluator running"}
