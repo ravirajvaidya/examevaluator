@@ -171,15 +171,18 @@ def process_pending_evaluations():
             )
 
             # Update result
-            supabase.table(TABLE_NAME) \
-                .update({
-                    "score": result["score"],
-                    "feedback": result["feedback"],
-                    "evaluation_status": "evaluated",
-                    "evaluated_at": datetime.now(timezone.utc).isoformat()
-                }) \
-                .eq("eval_id", eval_id) \
-                .execute()
+            res = supabase.table(TABLE_NAME) \
+            .update({
+                "score": result["score"],
+                "feedback": result["feedback"],
+                "evaluation_status": "evaluated",
+                "evaluated_at": datetime.now(timezone.utc).isoformat()
+                    }) \
+            .eq("eval_id", eval_id) \
+            .execute()
+
+            print("🧾 Update result:", res)
+
             print(
     f"✅ Evaluated | eval_id={eval_id} | "
     f"score={result['score']}/10"
