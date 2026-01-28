@@ -87,6 +87,10 @@ export default function ProfilePage(props) {
             await supabase.auth.signOut()
             navigate('/');
           }}>Logout</button>
+
+          <button className="back-btn" onClick={() => {
+            navigate('/dashboard');
+          }}>Back To Dashboard</button>
         </div>
       </div>
     </div >

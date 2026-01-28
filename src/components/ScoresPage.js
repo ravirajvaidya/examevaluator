@@ -26,12 +26,22 @@ export default function ScoresPage() {
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
+    // 1️⃣ Wait for session
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      throw new Error("No session yet");
+    }
+
     const { data, count, error } = await supabase
       .from("manual_evaluations")
       .select(
         "eval_id, question, answer, score, feedback, evaluated_at",
         { count: "exact" }
       )
+      .eq("auth_user_id", session.user.id)
       .eq("evaluation_status", "EVALUATED")
       .order("evaluated_at", { ascending: false })
       .range(from, to);
@@ -134,7 +144,7 @@ export default function ScoresPage() {
             ⬅ Back to Dashboard
           </button>
 
-          <h1 className="page-title">Scores</h1>
+          <h2>My Scores</h2>
 
           <button className="download-btn" onClick={downloadPDF}>
             📄 Download PDF
@@ -153,7 +163,7 @@ export default function ScoresPage() {
                 {Math.round(
                   (evaluations.reduce((s, e) => s + e.score, 0) /
                     evaluations.length) *
-                    10
+                  10
                 ) / 10}
               </strong>
             </span>
@@ -186,8 +196,8 @@ export default function ScoresPage() {
                         <td className="date-cell">
                           {item.evaluated_at
                             ? new Date(item.evaluated_at).toLocaleDateString(
-                                "en-IN"
-                              )
+                              "en-IN"
+                            )
                             : ""}
                         </td>
                         <td className="question-cell" title={item.question}>

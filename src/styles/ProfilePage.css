@@ -80,3 +80,13 @@
   color: #fff;
   cursor: pointer;
 }
+
+.back-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: #449aef;
+  color: #fff;
+  cursor: pointer;
+}

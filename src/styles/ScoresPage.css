@@ -14,8 +14,9 @@
 
 /* Header */
 .page-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  /* left | center | right */
   align-items: center;
   margin-bottom: 1.5rem;
   background: white;
@@ -26,36 +27,63 @@
   margin: 0 auto 1.5rem;
 }
 
-.page-title {
+/* Center Title */
+.page-header h2 {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 700;
   color: #1e293b;
+  text-align: center;
 }
 
-/* Buttons */
-.back-btn, .download-btn {
+/* Buttons (same size) */
+.back-btn,
+.download-btn {
+  min-width: 190px;
+  /* SAME SIZE */
   padding: 0.75rem 1.5rem;
-  border: none;
   border-radius: 8px;
+  border: none;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  text-align: center;
 }
 
 .back-btn {
+  justify-self: start;
+  /* LEFT */
   background: #64748b;
   color: white;
 }
 
 .download-btn {
+  justify-self: end;
+  /* RIGHT */
   background: #3b82f6;
   color: white;
 }
 
-.back-btn:hover, .download-btn:hover {
+.back-btn:hover,
+.download-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .back-btn,
+  .download-btn {
+    justify-self: center;
+    width: 100%;
+    max-width: 260px;
+  }
 }
 
 /* Stats */
@@ -141,7 +169,8 @@
   font-weight: 500;
 }
 
-.answer-cell, .feedback-cell {
+.answer-cell,
+.feedback-cell {
   max-width: 150px;
   cursor: pointer;
 }
@@ -212,10 +241,7 @@
 /* Modal */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   display: flex;
@@ -256,7 +282,6 @@
   font-size: 2rem;
   cursor: pointer;
   color: #64748b;
-  padding: 0;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -268,106 +293,24 @@
   color: #1e293b;
 }
 
-.modal-section {
-  margin-bottom: 1.5rem;
-}
-
-.modal-section strong {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #1e293b;
-  font-size: 1.1rem;
-}
-
-.modal-text {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 1.25rem;
-  line-height: 1.7;
-  white-space: pre-wrap;
-  max-height: 300px;
-  overflow-y: auto;
-  color: #374151;
-}
-
-.modal-section.small-text {
-  font-size: 0.95rem;
-  color: #64748b;
-}
-
-.modal-close-btn {
-  width: 100%;
-  padding: 1rem;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.modal-close-btn:hover {
-  background: #2563eb;
-  transform: translateY(-1px);
-}
-
-/* Empty & Loading States */
-.empty-state {
-  padding: 4rem 2rem;
-  text-align: center;
-  color: #64748b;
-}
-
-.empty-state h3 {
-  color: #1e293b;
-  margin-bottom: 0.5rem;
-}
-
-.loading-container {
-  min-height: 400px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #64748b;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #e5e7eb;
-  border-top: 3px solid #3b82f6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 /* Responsive */
 @media (max-width: 768px) {
   .page-container {
     padding: 1rem;
   }
-  
+
   .page-header {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-  
+
   .stats-bar {
     flex-direction: column;
     gap: 0.5rem;
     text-align: center;
   }
-  
+
   .question-cell {
     max-width: 150px;
   }
