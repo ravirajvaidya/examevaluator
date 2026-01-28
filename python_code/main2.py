@@ -149,7 +149,7 @@ def process_pending_evaluations():
     response = (
         supabase
         .table(TABLE_NAME)
-        .select("*")
+        .select("eval_id, question, answer")
         .in_("evaluation_status", ["PENDING", "FAILED"])
         .order("created_at")
         .limit(5)
