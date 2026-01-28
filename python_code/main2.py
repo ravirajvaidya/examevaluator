@@ -150,7 +150,7 @@ def process_pending_evaluations():
         supabase
         .table(TABLE_NAME)
         .select("*")
-        .in_("evaluation_status", ["FAILED", "PENDING",])
+        .in_("evaluation_status", ["PENDING", "FAILED"])
         .order("created_at")
         .limit(5)
         .execute()
@@ -168,37 +168,45 @@ def process_pending_evaluations():
             .eq("eval_id", eval_id) \
             .execute()
 
+        # 2️⃣ AI evaluation (ONLY this can fail)
         try:
-            # 2️⃣ Evaluate (ONLY this can fail)
             result = grade_answer(
                 row["question"],
                 row["answer"]
             )
-            print("🧠 AI result:", result)
+            print(f"🧠 AI result | eval_id={eval_id} | {result}")
 
-        except Exception:
-            # ❌ Only evaluation failure marks failed
+        except Exception as ai_error:
+            print(f"❌ AI FAILED | eval_id={eval_id} | {ai_error}")
+            traceback.print_exc()
+
             supabase.table(TABLE_NAME) \
                 .update({"evaluation_status": "FAILED"}) \
                 .eq("eval_id", eval_id) \
                 .execute()
+
+            continue  # 🔑 CRITICAL
+
+        # 3️⃣ DB update (SAFE ZONE)
+        try:
+            res = supabase.table(TABLE_NAME) \
+                .update({
+                    "score": result["score"],
+                    "feedback": result["feedback"],
+                    "evaluation_status": "EVALUATED",
+                    "evaluated_at": datetime.now(timezone.utc).isoformat()
+                }) \
+                .eq("eval_id", eval_id) \
+                .execute()
+
+            print(f"✅ EVALUATED | eval_id={eval_id} | score={result['score']}")
+            print("🧾 Update response:", res)
+
+
+        except Exception as db_error:
+            # ⚠️ IMPORTANT: do NOT mark FAILED here
+            print(f"⚠️ DB UPDATE FAILED | eval_id={eval_id} | {db_error}")
             traceback.print_exc()
-            continue   # 🔑 VERY IMPORTANT
-
-        # 3️⃣ Update DB (this should NEVER mark failed)
-        res = (
-            supabase.table(TABLE_NAME)
-            .update({
-                "score": result["score"],
-                "feedback": result["feedback"],
-                "evaluation_status": "EVALUATED",
-                "evaluated_at": datetime.now(timezone.utc).isoformat()
-            })
-            .eq("eval_id", eval_id)
-            .execute()
-        )
-
-        print("✅ Evaluated | eval_id =", eval_id)
 
 # =========================================================
 # BACKGROUND WORKER LOOP
@@ -224,7 +232,7 @@ def start_worker():
         while True:
             print("🔍 Checking for pending evaluations...")
             process_pending_evaluations()
-            time.sleep(60)
+            time.sleep(20)
 
     threading.Thread(target=worker, daemon=True).start()
 
