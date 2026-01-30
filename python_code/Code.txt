@@ -1,0 +1,352 @@
+
+import os
+import json
+import re
+import time
+import traceback
+from datetime import datetime, timezone
+
+from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from supabase import create_client
+from openai import OpenAI
+
+from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+# =========================================================
+# ENV
+# =========================================================
+
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR / ".env", override=True)
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
+
+if not all([SUPABASE_URL, SUPABASE_KEY, PERPLEXITY_API_KEY]):
+    raise ValueError("Missing environment variables")
+
+# =========================================================
+# CLIENTS
+# =========================================================
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+client = OpenAI(
+    api_key=PERPLEXITY_API_KEY,
+    base_url="https://api.perplexity.ai"
+)
+
+TABLE_NAME = "manual_evaluations"
+
+# =========================================================
+# FASTAPI
+# =========================================================
+app = FastAPI(title="Supabase AI Answer Evaluator")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],   # restrict in production
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# =========================================================
+# RUBRIC
+# =========================================================
+GRADING_RUBRIC = """
+You are an academic answer evaluator for Indian-style written examinations.
+
+You must evaluate answers strictly, conservatively, and objectively.
+You are NOT a teacher, tutor, or chatbot.
+You are a STRICT evaluator following Indian examination standards.
+
+────────────────────────────────────────
+INPUTS:
+1. Question
+2. Student Answer
+3. (Optional) Previous Evaluation Score
+
+────────────────────────────────────────
+ANTI-HALLUCINATION & SAFETY GUARDS (MANDATORY):
+
+- Evaluate ONLY what is explicitly written in the student's answer.
+- Do NOT assume intent, implied meaning, or unstated knowledge.
+- Do NOT invent expectations beyond the question level.
+- If an idea is vague or weakly explained → award minimal partial credit.
+- If an idea is completely absent → treat it as missing.
+- Repeating the question without explanation → no credit.
+- Memorized but irrelevant content → no credit.
+
+────────────────────────────────────────
+STEP 1: INTERNAL RUBRIC GENERATION (DO NOT OUTPUT)
+
+From the question, derive ONLY level-appropriate expectations:
+- Core Mandatory Points (essential definitions / concepts)
+- Supporting Points (explanations, causes, effects)
+- Optional Enhancements (examples, diagrams, measures)
+
+Do NOT raise expectations beyond standard textbook answers.
+Do NOT add advanced or unstated requirements.
+
+────────────────────────────────────────
+STEP 2: MULTI-DIMENSION EVALUATION (INTERNAL)
+
+Score internally on these dimensions (0–10):
+
+A. Conceptual Accuracy
+B. Coverage of Mandatory Points
+C. Explanation & Depth
+D. Relevance & Focus
+E. Language & Structure
+
+Language quality should NOT outweigh content correctness.
+
+────────────────────────────────────────
+STEP 3: INDIAN EXAM SCORING RULES
+
+- Missing core definition → cap score at 50% of maximum marks
+- Weak but relevant explanation → partial credit
+- Bullet points without explanation → partial credit
+- Examples improve score but are not mandatory unless asked
+- Diagrams are optional unless explicitly required
+- Average answers should score 40–60%
+- Full marks only for near-ideal answers
+
+────────────────────────────────────────
+STEP 4: LENGTH & QUALITY SANITY CHECK
+
+- One-line answers → low coverage
+- Length alone does NOT increase marks
+- Repetition does NOT add value
+
+────────────────────────────────────────
+STEP 5: GENERIC / TEXTBOOK SIGNAL CHECK
+
+If the answer is:
+- Overly generic
+- Memorized without explanation
+- Avoids specifics
+
+Then:
+- Reduce Explanation & Depth score
+- Do NOT automatically assign zero if content is relevant
+
+────────────────────────────────────────
+STEP 6: RE-EVALUATION CONSISTENCY CHECK (CRITICAL)
+
+If a Previous Evaluation Score is provided:
+
+- Re-evaluation MUST be consistent with earlier assessment.
+- Minor variation (±1–2 marks) is acceptable.
+- Major score drops require clear academic justification.
+
+STRICT RULES:
+- If the same answer previously received >0 marks,
+  DO NOT assign 0 unless the answer is now judged completely irrelevant or blank.
+- If relevant content exists, minimum score is 1.
+- If current internal score differs greatly from previous score,
+  adjust toward the previous score unless strong evidence supports the change.
+
+────────────────────────────────────────
+FINAL SCORE CALCULATION (INTERNAL)
+
+Content Score =
+  0.30 * Conceptual Accuracy +
+  0.30 * Coverage +
+  0.20 * Explanation +
+  0.20 * Relevance
+
+Language Weight ≤ 25%
+
+Map proportionally to m10.
+Round to nearest integer.
+NEVER exceed 10 marks.
+
+After rounding:
+- If score becomes 0 but relevant content exists → set score to 1.
+
+────────────────────────────────────────
+OUTPUT FORMAT (STRICT JSON ONLY):
+
+{
+  "score": <integer>,
+  "feedback": "<2–4 sentences, exam-oriented, actionable>"
+}
+
+────────────────────────────────────────
+FEEDBACK RULES:
+
+- Mention 1 clear strength (if any).
+- Mention 1–2 specific gaps.
+- Suggest 1 concrete improvement.
+- Neutral, academic tone.
+- Do NOT mention rubrics, AI, or internal logic.
+
+────────────────────────────────────────
+ABSOLUTE CONSTRAINTS:
+
+- Output valid JSON only.
+- No markdown.
+- No extra keys.
+- No explanations outside JSON.
+
+"""
+
+# =========================================================
+# AI GRADER (SAFE + CLEAN)
+# =========================================================
+def grade_answer(question: str, answer: str) -> dict:
+    if not answer.strip():
+        return {
+            "score": 0,
+            "feedback": "No answer submitted."
+        }
+
+    prompt = f"""
+{GRADING_RUBRIC}
+
+QUESTION:
+{question[:1000]}
+
+STUDENT ANSWER:
+{answer[:20000]}
+"""
+
+    response = client.chat.completions.create(
+        model="sonar-pro",
+        temperature=0,
+        max_tokens=300,
+        messages=[
+            {"role": "system", "content": "Return valid JSON only"},
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    raw = response.choices[0].message.content.strip()
+
+    match = re.search(r"\{[\s\S]*?\}", raw)
+    if not match:
+        raise ValueError("AI response does not contain JSON")
+
+    try:
+        data = json.loads(match.group(0))
+    except json.JSONDecodeError:
+        raise ValueError("Invalid JSON returned by AI")
+
+    total_score = data.get("total_score", 1)
+    feedback = data.get("feedback", "")
+
+    try:
+        total_score = float(total_score)
+    except Exception:
+        total_score = 0.0
+
+    total_score = max(0.0, min(total_score, 10.0))
+
+    feedback = str(feedback).strip()
+    if not feedback:
+        feedback = "Answer evaluated."
+
+    return {
+        "score": int(round(total_score)),
+        "feedback": feedback
+    }
+
+# =========================================================
+# PROCESS PENDING / FAILED ROWS
+# =========================================================
+def process_pending_evaluations():
+    response = (
+        supabase
+        .table(TABLE_NAME)
+        .select("eval_id, question, answer")
+        .in_("evaluation_status", ["PENDING", "FAILED"])
+        .order("created_at")
+        .limit(5)
+        .execute()
+    )
+
+    rows = response.data or []
+    print(f"📦 Rows fetched: {len(rows)}")
+
+    for row in rows:
+        eval_id = row["eval_id"]
+
+        # 1️⃣ Lock row
+        supabase.table(TABLE_NAME) \
+            .update({"evaluation_status": "PROCESSING"}) \
+            .eq("eval_id", eval_id) \
+            .execute()
+
+        # 2️⃣ AI evaluation (ONLY this can fail)
+        try:
+            result = grade_answer(
+                row["question"],
+                row["answer"]
+            )
+            print(f"🧠 AI result | eval_id={eval_id} | {result}")
+
+        except Exception as ai_error:
+            print(f"❌ AI FAILED | eval_id={eval_id} | {ai_error}")
+            traceback.print_exc()
+
+            supabase.table(TABLE_NAME) \
+                .update({"evaluation_status": "FAILED"}) \
+                .eq("eval_id", eval_id) \
+                .execute()
+
+            continue  # 🔑 CRITICAL
+
+        # 3️⃣ DB update (SAFE ZONE)
+        try:
+            res = supabase.table(TABLE_NAME) \
+                .update({
+                    "score": result["score"],
+                    "feedback": result["feedback"],
+                    "evaluation_status": "EVALUATED",
+                    "evaluated_at": datetime.now(timezone.utc).isoformat()
+                }) \
+                .eq("eval_id", eval_id) \
+                .execute()
+
+            print(f"✅ EVALUATED | eval_id={eval_id} | score={result['score']}")
+            print("🧾 Update response:", res)
+
+
+        except Exception as db_error:
+            # ⚠️ IMPORTANT: do NOT mark FAILED here
+            print(f"⚠️ DB UPDATE FAILED | eval_id={eval_id} | {db_error}")
+            traceback.print_exc()
+
+# =========================================================
+# BACKGROUND WORKER LOOP
+# =========================================================
+'''@app.on_event("startup")
+def start_worker():
+    import threading
+
+    def worker():
+        while True:
+            process_pending_evaluations()
+            time.sleep(60)
+
+    threading.Thread(target=worker, daemon=True).start()'''
+@app.on_event("startup")
+def start_worker():
+    import threading
+
+    print("🚀 FastAPI startup event triggered")
+    print("🧠 Background evaluator worker starting...")
+
+    def worker():
+        while True:
+            print("🔍 Checking for pending evaluations...")
+            process_pending_evaluations()
+            time.sleep(20)
+
+    threading.Thread(target=worker, daemon=True).start()
+
