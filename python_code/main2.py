@@ -5,34 +5,36 @@ import time
 import traceback
 from datetime import datetime, timezone
 
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client
 from openai import OpenAI
 
-from pathlib import Path
-from dotenv import load_dotenv
-import os
-
 # =========================================================
 # ENV
 # =========================================================
 
-BASE_DIR = Path(__file__).resolve().parent
-load_dotenv(BASE_DIR / ".env", override=True)
-
+load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-if not all([SUPABASE_URL, SUPABASE_KEY, PERPLEXITY_API_KEY]):
-    raise ValueError("Missing environment variables")
+PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
+if not PERPLEXITY_API_KEY:
+    raise ValueError("PERPLEXITY_API_KEY not found in environment variables")
+
+client = OpenAI(
+    api_key=PERPLEXITY_API_KEY,
+    base_url="https://api.perplexity.ai"
+)
+
 
 # =========================================================
 # CLIENTS
 # =========================================================
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 client = OpenAI(
     api_key=PERPLEXITY_API_KEY,
@@ -44,11 +46,12 @@ TABLE_NAME = "manual_evaluations"
 # =========================================================
 # FASTAPI
 # =========================================================
+
 app = FastAPI(title="Supabase AI Answer Evaluator")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # restrict in production
+    allow_origins=["*"],  # tighten in prod
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -56,37 +59,57 @@ app.add_middleware(
 # =========================================================
 # RUBRIC
 # =========================================================
+
 GRADING_RUBRIC = """
-You are an experienced examiner. You are a fair, strict, and unbiased evaluator.
+You are an academic answer evaluator for Indian-style written examinations.
 
-Ignore:
-- Emotional statements or self-harm related remarks
-- Executable scripts (mention them only in feedback if present)
+You must evaluate answers strictly, conservatively, and objectively.
+You are NOT a teacher, tutor, or chatbot.
+You are a STRICT evaluator following Indian examination standards.
 
-Be objective and strict like a human evaluator.
-Do not award high marks for average answers.
+────────────────────────────────────────
+INPUTS:
+1. Question
+2. Student Answer
 
-Grade out of 10 using:
-1. Accuracy & relevance (0–4)
-2. Organization & clarity (0–3)
-3. Language & grammar (0–3)
+────────────────────────────────────────
+ANTI-HALLUCINATION & SAFETY GUARDS (MANDATORY):
 
-Return ONLY valid JSON:
+- Evaluate ONLY what is explicitly written in the student's answer.
+- Do NOT assume intent, implied meaning, or unstated knowledge.
+- Do NOT invent expectations beyond the question level.
+- If an idea is vague or weakly explained → award minimal partial credit.
+- If an idea is completely absent → treat it as missing.
+- Repeating the question without explanation → no credit.
+- Memorized but irrelevant content → no credit.
+
+────────────────────────────────────────
+STEP 1–6: INTERNAL ONLY (DO NOT OUTPUT)
+
+Apply Indian exam evaluation logic strictly.
+
+FINAL SCORE:
+- Score out of 10
+- If relevant content exists, minimum score = 1
+- NEVER give 0 unless blank or irrelevant
+
+────────────────────────────────────────
+OUTPUT FORMAT (STRICT JSON ONLY):
+
 {
-  "total_score": 10,
-  "content_score": 4,
-  "organization_score": 3,
-  "language_score": 3,
-  "grade": "A",
-  "feedback": "Concise feedback"
+  "score": <integer 0–10>,
+  "feedback": "<2–4 sentences, exam-oriented>"
 }
+
+NO extra text. NO markdown.
 """
 
 # =========================================================
-# AI GRADER (SAFE + CLEAN)
+# AI GRADER (FIXED)
 # =========================================================
+
 def grade_answer(question: str, answer: str) -> dict:
-    if not answer.strip():
+    if not answer or not answer.strip():
         return {
             "score": 0,
             "feedback": "No answer submitted."
@@ -96,7 +119,7 @@ def grade_answer(question: str, answer: str) -> dict:
 {GRADING_RUBRIC}
 
 QUESTION:
-{question[:1000]}
+{question[:1500]}
 
 STUDENT ANSWER:
 {answer[:20000]}
@@ -114,6 +137,7 @@ STUDENT ANSWER:
 
     raw = response.choices[0].message.content.strip()
 
+    # Extract JSON safely
     match = re.search(r"\{[\s\S]*?\}", raw)
     if not match:
         raise ValueError("AI response does not contain JSON")
@@ -123,28 +147,38 @@ STUDENT ANSWER:
     except json.JSONDecodeError:
         raise ValueError("Invalid JSON returned by AI")
 
-    total_score = data.get("total_score", 0)
-    feedback = data.get("feedback", "")
+    # ✅ CORRECT KEY
+    score = data.get("score")
+    feedback = data.get("feedback", "").strip()
+
+    if score is None:
+        raise ValueError("Missing 'score' in AI response")
 
     try:
-        total_score = float(total_score)
+        score = float(score)
     except Exception:
-        total_score = 0.0
+        raise ValueError("Score is not numeric")
 
-    total_score = max(0.0, min(total_score, 10.0))
+    # Clamp score
+    score = max(0.0, min(score, 10.0))
 
-    feedback = str(feedback).strip()
+    # Feedback fallback
     if not feedback:
         feedback = "Answer evaluated."
 
+    # 🚨 Consistency safety (critical)
+    if score == 0 and any(word in feedback.lower() for word in ["accurate", "good", "clear", "relevant"]):
+        score = 1
+
     return {
-        "score": int(round(total_score)),
+        "score": int(round(score)),
         "feedback": feedback
     }
 
 # =========================================================
 # PROCESS PENDING / FAILED ROWS
 # =========================================================
+
 def process_pending_evaluations():
     response = (
         supabase
@@ -162,32 +196,26 @@ def process_pending_evaluations():
     for row in rows:
         eval_id = row["eval_id"]
 
-        # 1️⃣ Lock row
+        # Lock row
         supabase.table(TABLE_NAME) \
             .update({"evaluation_status": "PROCESSING"}) \
             .eq("eval_id", eval_id) \
             .execute()
 
-        # 2️⃣ AI evaluation (ONLY this can fail)
         try:
-            result = grade_answer(
-                row["question"],
-                row["answer"]
-            )
+            result = grade_answer(row["question"], row["answer"])
             print(f"🧠 AI result | eval_id={eval_id} | {result}")
 
-        except Exception as ai_error:
-            print(f"❌ AI FAILED | eval_id={eval_id} | {ai_error}")
+        except Exception as e:
+            print(f"❌ AI FAILED | eval_id={eval_id} | {e}")
             traceback.print_exc()
 
             supabase.table(TABLE_NAME) \
                 .update({"evaluation_status": "FAILED"}) \
                 .eq("eval_id", eval_id) \
                 .execute()
+            continue
 
-            continue  # 🔑 CRITICAL
-
-        # 3️⃣ DB update (SAFE ZONE)
         try:
             res = supabase.table(TABLE_NAME) \
                 .update({
@@ -200,33 +228,21 @@ def process_pending_evaluations():
                 .execute()
 
             print(f"✅ EVALUATED | eval_id={eval_id} | score={result['score']}")
-            print("🧾 Update response:", res)
-
+            print("🧾 DB response:", res)
 
         except Exception as db_error:
-            # ⚠️ IMPORTANT: do NOT mark FAILED here
             print(f"⚠️ DB UPDATE FAILED | eval_id={eval_id} | {db_error}")
             traceback.print_exc()
 
 # =========================================================
-# BACKGROUND WORKER LOOP
+# BACKGROUND WORKER
 # =========================================================
-'''@app.on_event("startup")
-def start_worker():
-    import threading
 
-    def worker():
-        while True:
-            process_pending_evaluations()
-            time.sleep(60)
-
-    threading.Thread(target=worker, daemon=True).start()'''
 @app.on_event("startup")
 def start_worker():
     import threading
 
-    print("🚀 FastAPI startup event triggered")
-    print("🧠 Background evaluator worker starting...")
+    print("🚀 Evaluator service started")
 
     def worker():
         while True:
@@ -235,4 +251,3 @@ def start_worker():
             time.sleep(20)
 
     threading.Thread(target=worker, daemon=True).start()
-
