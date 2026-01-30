@@ -64,6 +64,10 @@ export default function LoginPage(props) {
 
     return (
         <div className="auth-container">
+            <div>
+                <h1>🤖 AI Answer Evaluator</h1>
+                <p>Professional grading powered by AI</p>
+            </div>
             <h2>Login</h2>
 
             {error && <p className="auth-error">{error}</p>}

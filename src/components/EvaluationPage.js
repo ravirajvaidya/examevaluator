@@ -206,7 +206,7 @@ export default function EvaluationPage() {
 
       {/* ✅ ORIGINAL HEADER */}
       <div style={styles.header}>
-        <h1 style={styles.title}>🤖 AI Answer Evaluator</h1>
+        <h1 style={styles.title}>AI Answer Evaluator</h1>
         <p style={styles.subtitle}>Professional grading powered by AI</p>
       </div>
 
