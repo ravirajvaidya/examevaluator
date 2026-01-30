@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import * as XLSX from "xlsx";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -8,10 +8,13 @@ export default function EvaluationPage() {
   const userData = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
 
+
   const API_ENDPOINT = "http://localhost:8000/api/evaluate-excel";
 
   const [file, setFile] = useState(null);
   const [rollNo, setRollNo] = useState("");
+  const [session, setSession] = useState(null);
+
 
   // 🔹 MULTI QUESTION STATE (MAX 4)
   const [qaList, setQaList] = useState([{ question: "", answer: "" }]);
@@ -22,7 +25,17 @@ export default function EvaluationPage() {
   const [error, setError] = useState("");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
+  const isButtonDisabled = loading || !session;
+
+
   /* ---------------- PROFILE ---------------- */
+  // 1️⃣ Wait for session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+    });
+  }, []);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem("user");
@@ -68,19 +81,17 @@ export default function EvaluationPage() {
       return;
     }
 
+
     setLoading(true);
     setError("");
     setShowPreview(false);
 
     try {
-      // 1️⃣ Wait for session
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
 
       if (!session) {
         throw new Error("No session yet");
       }
+
 
       // 2️⃣ Fetch user profile
       const { data, error } = await supabase
@@ -296,7 +307,7 @@ export default function EvaluationPage() {
                 console.log("BUTTON CLICKED");
                 handleEvaluate();
               }}
-              disabled={loading}
+              disabled={isButtonDisabled}
               style={{
                 ...styles.primaryButton,
                 ...(loading ? styles.loadingButton : {})
@@ -307,9 +318,13 @@ export default function EvaluationPage() {
                   <div style={styles.spinner}></div>
                   <span>🔍 Analyzing with AI...</span>
                 </>
+              ) : !session ? (
+                <>
+                  🔒 <span>Login required</span>
+                </>
               ) : (
                 <>
-                  🚀 <span>Evaluate Answers</span>
+                  🚀 <span>Submit Answers</span>
                 </>
               )}
             </button>
