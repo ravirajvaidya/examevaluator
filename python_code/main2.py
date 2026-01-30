@@ -97,7 +97,7 @@ FINAL SCORE:
 OUTPUT FORMAT (STRICT JSON ONLY):
 
 {
-  "score": <integer 0–10>,
+  "score": <Float 0–10>,
   "feedback": "<2–4 sentences, exam-oriented>"
 }
 
