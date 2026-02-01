@@ -63,7 +63,8 @@ export default function SignUpPage() {
                             phone: formData.phone,       // User metadata phone
                             name: formData.name,
                             academyid: formData.academyid,
-                            studentid: formData.studentid
+                            studentid: formData.studentid,
+                            mobileno: formData.phone
                         }
                     }
                 },
