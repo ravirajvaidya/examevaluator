@@ -128,7 +128,7 @@ STUDENT ANSWER:
     response = client.chat.completions.create(
         model="sonar-pro",
         temperature=0,
-        max_tokens=300,
+        max_tokens=700,
         messages=[
             {"role": "system", "content": "Return valid JSON only"},
             {"role": "user", "content": prompt}
