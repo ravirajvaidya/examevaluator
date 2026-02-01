@@ -1,0 +1,89 @@
+/* Page background */
+.quiz-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #b7c3e6, #e7c2dd);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Card container */
+.quiz-card {
+    width: 700px;
+    padding: 40px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    text-align: center;
+}
+
+/* Title */
+.quiz-title {
+    font-size: 36px;
+    font-weight: 800;
+    margin-bottom: 30px;
+    letter-spacing: 1px;
+}
+
+/* Question box */
+.question-box {
+    background: #4f95bd;
+    color: white;
+    padding: 25px;
+    border-radius: 16px;
+    font-size: 22px;
+    margin-bottom: 30px;
+}
+
+/* Options layout */
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+/* Option buttons */
+.option-btn {
+    padding: 18px;
+    border-radius: 14px;
+    border: none;
+    font-size: 20px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.option-btn:hover {
+    transform: translateY(-2px);
+    background: #f3f4f6;
+}
+
+.option-btn.selected {
+    background: #4f95bd;
+    color: white;
+}
+
+/* Submit button */
+.submit-btn {
+    margin-top: 30px;
+    padding: 14px 30px;
+    font-size: 18px;
+    border: none;
+    border-radius: 14px;
+    background: #111827;
+    color: white;
+    cursor: pointer;
+}
+
+.submit-btn:hover {
+    background: #000000;
+}
+
+/* Result text */
+.result-text {
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+}

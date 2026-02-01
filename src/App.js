@@ -9,6 +9,7 @@ import ProfilePage from './components/ProfilePage';
 import ScoresPage from './components/ScoresPage';
 import SettingsPage from './components/SettingsPage';
 import AdminPage from './components/AdminPage';
+import DashboardPage from './components/DashboardPage';
 
 // import Info from './components/Info';
 // import ExcelEvaluator from './components/ExcelEvaluator';
@@ -24,7 +25,7 @@ function App() {
         <Routes>
           <Route path='/signup' element={<SignUpPage />}></Route>
           <Route path='/' element={<LoginPage />}></Route>
-          <Route path='/dashboard' element={<AdminPage />}></Route>
+          <Route path='/dashboard' element={<DashboardPage />}></Route>
           <Route path='/profile' element={<ProfilePage />}></Route>
           <Route path='/scores' element={<ScoresPage />}></Route>
           <Route path='/settings' element={<SettingsPage />}></Route>
