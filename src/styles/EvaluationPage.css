@@ -1,0 +1,211 @@
+/* ================= GLOBAL ================= */
+.evaluation-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ================= PROFILE BAR ================= */
+.profile-bar {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    z-index: 1000;
+}
+
+.profile-button {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.profile-name {
+    font-size: 0.95rem;
+}
+
+.profile-caret {
+    font-size: 0.8rem;
+}
+
+.profile-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    min-width: 180px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dropdown-button {
+    width: 100%;
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 0.5rem 1rem;
+}
+
+/* ================= HEADER ================= */
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    color: white;
+    margin-top: 6rem;
+}
+
+.page-title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.page-subtitle {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* ================= CARD ================= */
+.card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.card-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.icon {
+    font-size: 2rem;
+}
+
+/* ================= FORM ================= */
+.form-grid {
+    display: grid;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.label {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #1e293b;
+}
+
+.required {
+    color: #ef4444;
+}
+
+textarea {
+    width: 100%;
+    padding: 1.25rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    font-size: 1rem;
+    resize: vertical;
+    font-family: inherit;
+}
+
+/* ================= BUTTONS ================= */
+.button-group {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.primary-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 2.5rem;
+    border-radius: 16px;
+    border: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 220px;
+}
+
+.primary-button.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.secondary-button {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #e2e8f0;
+    padding: 1rem 2rem;
+    border-radius: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* ================= ERROR ================= */
+.error-card {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    color: #dc2626;
+    display: flex;
+    gap: 0.75rem;
+    cursor: pointer;
+}
+
+/* ================= SPINNER ================= */
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
